@@ -1,0 +1,6 @@
+- feat: added support for image editing and variations
+- fix: encode provider names in API URLs
+- fix: add finish reason to Gemini chat completion response
+- fix: fixes MCP server initialization issues
+- fix: fixes race condition while booting up server form config.json + mcp_server config
+- fix: adds virtual key support for container APIs

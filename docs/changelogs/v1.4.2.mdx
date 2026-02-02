@@ -1,0 +1,93 @@
+---
+title: "v1.4.2"
+description: "v1.4.2 changelog - 2026-01-22"
+---
+<Tabs>
+  <Tab title="NPX">
+    ```bash
+    npx -y @maximhq/bifrost --transport-version v1.4.2
+    ```
+  </Tab>
+  <Tab title="Docker">
+    ```bash
+    docker pull maximhq/bifrost:v1.4.2
+    docker run -p 8080:8080 maximhq/bifrost:v1.4.2
+    ```
+  </Tab>
+</Tabs>
+
+<Update label="Bifrost(HTTP)" description="1.4.2">
+- fix: allow setting authorization header through extra headers and in allow list and deny list
+- feat: add volume graph for logging page
+- feat: add new dashboard page for graphical representation of request volume, cost usage, token usage, and model usage
+- feat: add container and container file support for OpenAI
+- feat: configure custom CORS headers, allowing clients to specify additional headers that should be allowed in cross-origin requests.
+- feat: support for listing models from specific provider or all providers via a header flag x-bf-list-models-provider from integrations.
+- feat: added context aware default provider fallback in integrations
+- feat: added support for gemini google search tool
+- fix: function response part handling in gemini
+- fix: call enrich error in vertex to return raw request and response in bifrost errors
+- fix: append valid/non-empty content blocks to form bedrock requests
+- fix: handle multiple data types in bedrock tool result
+- fix: anthropic and gemini responses stream event cycle
+- fix: provider key enabled/disabled state now persists across restarts
+- fix: nil check for value in SetAttribute function call in trace.go
+- fix: return proper error signals for gemini filtered/malformed function call responses
+
+</Update>
+<Update label="Core" description="1.3.12">
+- feat: added support for addWatermark parameter in Gemini Image Gen
+- feat: adds containers and container files APIs for OpenAI
+- fix: allow setting authorization header through extra headers and in allow list and deny list
+- feat: added context aware default provider fallback in integrations
+- feat: added image generation support for bedrock
+- feat: added support for gemini google search tool
+- fix: function response part handling in gemini
+- fix: call enrich error in vertex to return raw request and response in bifrost errors
+- fix: append valid/non-empty content blocks to form bedrock requests
+- fix: handle multiple data types in bedrock tool result
+- fix: anthropic and gemini responses stream event cycle
+- fix: nil check for value in SetAttribute function call in trace.go
+- fix: return proper error signals for gemini filtered/malformed function call responses
+
+</Update>
+<Update label="Framework" description="1.2.14">
+- fix: provider key enabled/disabled state now persists across restarts
+
+</Update>
+<Update label="governance" description="1.4.15">
+- chore: upgrades core to 1.3.12 and framework to 1.2.14
+
+</Update>
+<Update label="jsonparser" description="1.4.14">
+- chore: upgrades core to 1.3.12 and framework to 1.2.14
+
+</Update>
+<Update label="litellmcompat" description="0.0.4">
+- chore: upgrades core to 1.3.12 and framework to 1.2.14
+
+</Update>
+<Update label="logging" description="1.4.14">
+- chore: upgrades core to 1.3.12 and framework to 1.2.14
+
+</Update>
+<Update label="maxim" description="1.5.13">
+- chore: upgrades core to 1.3.12 and framework to 1.2.14
+
+</Update>
+<Update label="mocker" description="1.4.14">
+- chore: upgrades core to 1.3.12 and framework to 1.2.14
+
+</Update>
+<Update label="otel" description="1.1.14">
+- chore: upgrades core to 1.3.12 and framework to 1.2.14
+
+</Update>
+<Update label="semanticcache" description="1.4.14">
+- chore: upgrades core to 1.3.12 and framework to 1.2.14
+
+</Update>
+<Update label="telemetry" description="1.4.15">
+- chore: upgrades core to 1.3.12 and framework to 1.2.14
+
+</Update>

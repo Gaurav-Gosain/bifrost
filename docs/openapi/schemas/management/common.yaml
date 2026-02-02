@@ -1,0 +1,35 @@
+# Common schemas used across management APIs
+
+SuccessResponse:
+  type: object
+  description: Generic success response
+  properties:
+    status:
+      type: string
+      example: success
+    message:
+      type: string
+      example: Operation completed successfully
+
+ErrorResponse:
+  type: object
+  description: Error response
+  $ref: '../../schemas/inference/common.yaml#/BifrostError'
+
+MessageResponse:
+  type: object
+  description: Simple message response
+  properties:
+    message:
+      type: string
+
+EnvVar:
+  type: object
+  description: Environment variable configuration
+  properties:
+        value:
+          type: string
+        env_var:
+          type: string
+        from_env:
+          type: boolean

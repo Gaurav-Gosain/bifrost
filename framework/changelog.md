@@ -1,0 +1,2 @@
+- feat: added tables for routing rules
+- fix: tracing race condition fixes

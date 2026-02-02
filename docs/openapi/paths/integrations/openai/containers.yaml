@@ -1,0 +1,352 @@
+# OpenAI Integration - Containers API Endpoints
+
+containers:
+  post:
+    operationId: openaiCreateContainer
+    summary: Create container (OpenAI format)
+    description: |
+      Creates a new container for storing files and data.
+
+      **Note:** This endpoint also works without the `/v1` prefix (e.g., `/openai/containers`).
+    tags:
+      - OpenAI Integration
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../../schemas/inference/containers.yaml#/ContainerCreateRequest'
+    responses:
+      '200':
+        description: Successful response
+        content:
+          application/json:
+            schema:
+              $ref: '../../../schemas/inference/containers.yaml#/ContainerCreateResponse'
+      '400':
+        $ref: '../../../openapi.yaml#/components/responses/BadRequest'
+      '500':
+        $ref: '../../../openapi.yaml#/components/responses/InternalError'
+  get:
+    operationId: openaiListContainers
+    summary: List containers (OpenAI format)
+    description: |
+      Lists containers for a provider.
+
+      **Note:** This endpoint also works without the `/v1` prefix (e.g., `/openai/containers`).
+    tags:
+      - OpenAI Integration
+    parameters:
+      - name: provider
+        in: query
+        schema:
+          type: string
+        description: Provider to list containers for (defaults to openai)
+      - name: limit
+        in: query
+        schema:
+          type: integer
+        description: Maximum containers to return
+      - name: after
+        in: query
+        schema:
+          type: string
+        description: Cursor for pagination
+      - name: order
+        in: query
+        schema:
+          type: string
+          enum: [asc, desc]
+        description: Sort order
+    responses:
+      '200':
+        description: Successful response
+        content:
+          application/json:
+            schema:
+              $ref: '../../../schemas/inference/containers.yaml#/ContainerListResponse'
+      '400':
+        $ref: '../../../openapi.yaml#/components/responses/BadRequest'
+      '500':
+        $ref: '../../../openapi.yaml#/components/responses/InternalError'
+
+containers-by-id:
+  get:
+    operationId: openaiRetrieveContainer
+    summary: Retrieve container (OpenAI format)
+    description: |
+      Retrieves a specific container by ID.
+
+      **Note:** This endpoint also works without the `/v1` prefix (e.g., `/openai/containers/{container_id}`).
+    tags:
+      - OpenAI Integration
+    parameters:
+      - name: container_id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Container ID
+      - name: provider
+        in: query
+        schema:
+          type: string
+        description: Provider for the container (defaults to openai)
+    responses:
+      '200':
+        description: Successful response
+        content:
+          application/json:
+            schema:
+              $ref: '../../../schemas/inference/containers.yaml#/ContainerRetrieveResponse'
+      '400':
+        $ref: '../../../openapi.yaml#/components/responses/BadRequest'
+      '500':
+        $ref: '../../../openapi.yaml#/components/responses/InternalError'
+  delete:
+    operationId: openaiDeleteContainer
+    summary: Delete container (OpenAI format)
+    description: |
+      Deletes a container.
+
+      **Note:** This endpoint also works without the `/v1` prefix (e.g., `/openai/containers/{container_id}`).
+    tags:
+      - OpenAI Integration
+    parameters:
+      - name: container_id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Container ID to delete
+      - name: provider
+        in: query
+        schema:
+          type: string
+        description: Provider for the container (defaults to openai)
+    responses:
+      '200':
+        description: Successful response
+        content:
+          application/json:
+            schema:
+              $ref: '../../../schemas/inference/containers.yaml#/ContainerDeleteResponse'
+      '400':
+        $ref: '../../../openapi.yaml#/components/responses/BadRequest'
+      '500':
+        $ref: '../../../openapi.yaml#/components/responses/InternalError'
+
+# =============================================================================
+# CONTAINER FILES ENDPOINTS
+# =============================================================================
+
+container-files:
+  post:
+    operationId: openaiCreateContainerFile
+    summary: Create file in container (OpenAI format)
+    description: |
+      Creates a new file in a container. You can either upload file content directly
+      via multipart/form-data or reference an existing file by its ID.
+
+      **Note:** This endpoint also works without the `/v1` prefix (e.g., `/openai/containers/{container_id}/files`).
+    tags:
+      - OpenAI Integration
+    parameters:
+      - name: container_id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Container ID
+      - name: provider
+        in: query
+        schema:
+          type: string
+        description: Provider for the container (defaults to openai)
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            $ref: '../../../schemas/inference/containers.yaml#/ContainerFileCreateMultipartRequest'
+        application/json:
+          schema:
+            $ref: '../../../schemas/inference/containers.yaml#/ContainerFileCreateJsonRequest'
+    responses:
+      '200':
+        description: Successful response
+        content:
+          application/json:
+            schema:
+              $ref: '../../../schemas/inference/containers.yaml#/ContainerFileCreateResponse'
+      '400':
+        $ref: '../../../openapi.yaml#/components/responses/BadRequest'
+      '500':
+        $ref: '../../../openapi.yaml#/components/responses/InternalError'
+  get:
+    operationId: openaiListContainerFiles
+    summary: List files in container (OpenAI format)
+    description: |
+      Lists all files in a container.
+
+      **Note:** This endpoint also works without the `/v1` prefix (e.g., `/openai/containers/{container_id}/files`).
+    tags:
+      - OpenAI Integration
+    parameters:
+      - name: container_id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Container ID
+      - name: provider
+        in: query
+        schema:
+          type: string
+        description: Provider for the container (defaults to openai)
+      - name: limit
+        in: query
+        schema:
+          type: integer
+        description: Maximum files to return
+      - name: after
+        in: query
+        schema:
+          type: string
+        description: Cursor for pagination
+      - name: order
+        in: query
+        schema:
+          type: string
+          enum: [asc, desc]
+        description: Sort order
+    responses:
+      '200':
+        description: Successful response
+        content:
+          application/json:
+            schema:
+              $ref: '../../../schemas/inference/containers.yaml#/ContainerFileListResponse'
+      '400':
+        $ref: '../../../openapi.yaml#/components/responses/BadRequest'
+      '500':
+        $ref: '../../../openapi.yaml#/components/responses/InternalError'
+
+container-files-by-id:
+  get:
+    operationId: openaiRetrieveContainerFile
+    summary: Retrieve file from container (OpenAI format)
+    description: |
+      Retrieves metadata for a specific file in a container.
+
+      **Note:** This endpoint also works without the `/v1` prefix (e.g., `/openai/containers/{container_id}/files/{file_id}`).
+    tags:
+      - OpenAI Integration
+    parameters:
+      - name: container_id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Container ID
+      - name: file_id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: File ID
+      - name: provider
+        in: query
+        schema:
+          type: string
+        description: Provider for the container (defaults to openai)
+    responses:
+      '200':
+        description: Successful response
+        content:
+          application/json:
+            schema:
+              $ref: '../../../schemas/inference/containers.yaml#/ContainerFileRetrieveResponse'
+      '400':
+        $ref: '../../../openapi.yaml#/components/responses/BadRequest'
+      '500':
+        $ref: '../../../openapi.yaml#/components/responses/InternalError'
+  delete:
+    operationId: openaiDeleteContainerFile
+    summary: Delete file from container (OpenAI format)
+    description: |
+      Deletes a file from a container.
+
+      **Note:** This endpoint also works without the `/v1` prefix (e.g., `/openai/containers/{container_id}/files/{file_id}`).
+    tags:
+      - OpenAI Integration
+    parameters:
+      - name: container_id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Container ID
+      - name: file_id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: File ID to delete
+      - name: provider
+        in: query
+        schema:
+          type: string
+        description: Provider for the container (defaults to openai)
+    responses:
+      '200':
+        description: Successful response
+        content:
+          application/json:
+            schema:
+              $ref: '../../../schemas/inference/containers.yaml#/ContainerFileDeleteResponse'
+      '400':
+        $ref: '../../../openapi.yaml#/components/responses/BadRequest'
+      '500':
+        $ref: '../../../openapi.yaml#/components/responses/InternalError'
+
+container-files-content:
+  get:
+    operationId: openaiGetContainerFileContent
+    summary: Get file content from container (OpenAI format)
+    description: |
+      Downloads the content of a file from a container.
+
+      **Note:** This endpoint also works without the `/v1` prefix (e.g., `/openai/containers/{container_id}/files/{file_id}/content`).
+    tags:
+      - OpenAI Integration
+    parameters:
+      - name: container_id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Container ID
+      - name: file_id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: File ID
+      - name: provider
+        in: query
+        schema:
+          type: string
+        description: Provider for the container (defaults to openai)
+    responses:
+      '200':
+        description: Successful response
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      '400':
+        $ref: '../../../openapi.yaml#/components/responses/BadRequest'
+      '500':
+        $ref: '../../../openapi.yaml#/components/responses/InternalError'

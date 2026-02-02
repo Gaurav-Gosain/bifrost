@@ -1,0 +1,767 @@
+# Governance API schemas
+
+Budget:
+  type: object
+  description: Budget configuration
+  properties:
+    id:
+      type: string
+    max_limit:
+      type: number
+      description: Maximum budget in dollars
+    reset_duration:
+      type: string
+      description: Reset duration (e.g., "30s", "5m", "1h", "1d", "1w", "1M")
+    last_reset:
+      type: string
+      format: date-time
+    current_usage:
+      type: number
+    config_hash:
+      type: string
+      nullable: true
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+
+RateLimit:
+  type: object
+  description: Rate limit configuration
+  properties:
+    id:
+      type: string
+    token_max_limit:
+      type: integer
+      format: int64
+    token_reset_duration:
+      type: string
+    token_current_usage:
+      type: integer
+      format: int64
+    token_last_reset:
+      type: string
+      format: date-time
+    request_max_limit:
+      type: integer
+      format: int64
+      nullable: true
+    request_reset_duration:
+      type: string
+      nullable: true
+    request_current_usage:
+      type: integer
+      format: int64
+    request_last_reset:
+      type: string
+      format: date-time
+    config_hash:
+      type: string
+      nullable: true
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+
+CreateBudgetRequest:
+  type: object
+  description: Create budget request
+  required:
+    - max_limit
+    - reset_duration
+  properties:
+    max_limit:
+      type: number
+    reset_duration:
+      type: string
+
+UpdateBudgetRequest:
+  type: object
+  description: Update budget request
+  properties:
+    max_limit:
+      type: number
+    reset_duration:
+      type: string
+
+CreateRateLimitRequest:
+  type: object
+  description: Create rate limit request
+  properties:
+    token_max_limit:
+      type: integer
+      format: int64
+    token_reset_duration:
+      type: string
+    request_max_limit:
+      type: integer
+      format: int64
+    request_reset_duration:
+      type: string
+
+UpdateRateLimitRequest:
+  type: object
+  description: Update rate limit request
+  properties:
+    token_max_limit:
+      type: integer
+      format: int64
+    token_reset_duration:
+      type: string
+    request_max_limit:
+      type: integer
+      format: int64
+    request_reset_duration:
+      type: string
+
+VirtualKeyProviderConfig:
+  type: object
+  description: Provider configuration for a virtual key
+  properties:
+    id:
+      type: integer
+    virtual_key_id:
+      type: string
+    provider:
+      type: string
+    weight:
+      type: number
+    allowed_models:
+      type: array
+      items:
+        type: string
+    budget_id:
+      type: string
+    rate_limit_id:
+      type: string
+    budget:
+      $ref: '#/Budget'
+    rate_limit:
+      $ref: '#/RateLimit'
+    keys:
+      type: array
+      items:
+        $ref: '#/TableKey'
+
+VirtualKeyMCPConfig:
+  type: object
+  description: MCP configuration for a virtual key
+  properties:
+    id:
+      type: integer
+    mcp_client_name:
+      type: string
+    tools_to_execute:
+      type: array
+      items:
+        type: string
+
+VirtualKey:
+  type: object
+  description: Virtual key configuration
+  properties:
+    id:
+      type: string
+    name:
+      type: string
+    value:
+      type: string
+    description:
+      type: string
+    is_active:
+      type: boolean
+    provider_configs:
+      type: array
+      items:
+        $ref: '#/VirtualKeyProviderConfig'
+    mcp_configs:
+      type: array
+      items:
+        $ref: '#/VirtualKeyMCPConfig'
+
+CreateVirtualKeyRequest:
+  type: object
+  description: Create virtual key request
+  required:
+    - name
+  properties:
+    name:
+      type: string
+    description:
+      type: string
+    provider_configs:
+      type: array
+      items:
+        type: object
+        properties:
+          provider:
+            type: string
+          weight:
+            type: number
+          allowed_models:
+            type: array
+            items:
+              type: string
+          budget:
+            $ref: '#/CreateBudgetRequest'
+          rate_limit:
+            $ref: '#/CreateRateLimitRequest'
+          key_ids:
+            type: array
+            items:
+              type: string
+    mcp_configs:
+      type: array
+      items:
+        type: object
+        properties:
+          mcp_client_name:
+            type: string
+          tools_to_execute:
+            type: array
+            items:
+              type: string
+    team_id:
+      type: string
+    customer_id:
+      type: string
+    budget:
+      $ref: '#/CreateBudgetRequest'
+    rate_limit:
+      $ref: '#/CreateRateLimitRequest'
+    is_active:
+      type: boolean
+
+UpdateVirtualKeyRequest:
+  type: object
+  description: Update virtual key request
+  properties:
+    name:
+      type: string
+    description:
+      type: string
+    provider_configs:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: integer
+          provider:
+            type: string
+          weight:
+            type: number
+          allowed_models:
+            type: array
+            items:
+              type: string
+          budget:
+            $ref: '#/UpdateBudgetRequest'
+          rate_limit:
+            $ref: '#/UpdateRateLimitRequest'
+          key_ids:
+            type: array
+            items:
+              type: string
+    mcp_configs:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: integer
+          mcp_client_name:
+            type: string
+          tools_to_execute:
+            type: array
+            items:
+              type: string
+    team_id:
+      type: string
+    customer_id:
+      type: string
+    budget:
+      $ref: '#/UpdateBudgetRequest'
+    rate_limit:
+      $ref: '#/UpdateRateLimitRequest'
+    is_active:
+      type: boolean
+
+ListVirtualKeysResponse:
+  type: object
+  description: List virtual keys response
+  properties:
+    virtual_keys:
+      type: array
+      items:
+        $ref: '#/VirtualKey'
+    count:
+      type: integer
+
+VirtualKeyResponse:
+  type: object
+  description: Virtual key operation response
+  properties:
+    message:
+      type: string
+    virtual_key:
+      $ref: '#/VirtualKey'
+
+Team:
+  type: object
+  description: Team configuration
+  properties:
+    id:
+      type: string
+    name:
+      type: string
+    customer_id:
+      type: string
+    budget_id:
+      type: string
+    customer:
+      $ref: '#/Customer'
+    budget:
+      $ref: '#/Budget'
+    virtual_keys:
+      type: array
+      items:
+        $ref: '#/VirtualKey'
+    profile:
+      type: object
+      additionalProperties: true
+    config:
+      type: object
+      additionalProperties: true
+    claims:
+      type: object
+      additionalProperties: true
+    config_hash:
+      type: string
+      nullable: true
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+
+CreateTeamRequest:
+  type: object
+  description: Create team request
+  required:
+    - name
+  properties:
+    name:
+      type: string
+    customer_id:
+      type: string
+    budget:
+      $ref: '#/CreateBudgetRequest'
+
+UpdateTeamRequest:
+  type: object
+  description: Update team request
+  properties:
+    name:
+      type: string
+    customer_id:
+      type: string
+    budget:
+      $ref: '#/UpdateBudgetRequest'
+
+ListTeamsResponse:
+  type: object
+  description: List teams response
+  properties:
+    teams:
+      type: array
+      items:
+        $ref: '#/Team'
+    count:
+      type: integer
+
+TeamResponse:
+  type: object
+  description: Team operation response
+  properties:
+    message:
+      type: string
+    team:
+      $ref: '#/Team'
+
+Customer:
+  type: object
+  description: Customer configuration
+  properties:
+    id:
+      type: string
+    name:
+      type: string
+    budget_id:
+      type: string
+    budget:
+      $ref: '#/Budget'
+    teams:
+      type: array
+      items:
+        $ref: '#/Team'
+    virtual_keys:
+      type: array
+      items:
+        $ref: '#/VirtualKey'
+    config_hash:
+      type: string
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+
+CreateCustomerRequest:
+  type: object
+  description: Create customer request
+  required:
+    - name
+  properties:
+    name:
+      type: string
+    budget:
+      $ref: '#/CreateBudgetRequest'
+
+UpdateCustomerRequest:
+  type: object
+  description: Update customer request
+  properties:
+    name:
+      type: string
+    budget:
+      $ref: '#/UpdateBudgetRequest'
+
+ListCustomersResponse:
+  type: object
+  description: List customers response
+  properties:
+    customers:
+      type: array
+      items:
+        $ref: '#/Customer'
+    count:
+      type: integer
+
+ListBudgetsResponse:
+  type: object
+  description: List budgets response
+  properties:
+    budgets:
+      type: array
+      items:
+        $ref: '#/Budget'
+    count:
+      type: integer
+
+ListRateLimitsResponse:
+  type: object
+  description: List rate limits response
+  properties:
+    rate_limits:
+      type: array
+      items:
+        $ref: '#/RateLimit'
+    count:
+      type: integer
+
+CustomerResponse:
+  type: object
+  description: Customer operation response
+  properties:
+    message:
+      type: string
+    customer:
+      $ref: '#/Customer'
+
+TableKey:
+  type: object
+  description: Table key configuration
+  properties:
+    id:
+      type: integer
+    name:
+      type: string
+    provider_id:
+      type: integer
+    provider:
+      type: string
+    key_id:
+      type: string
+    value:
+      $ref: '../../schemas/management/common.yaml#/EnvVar'
+    models:
+      type: array
+      items:
+        type: string
+    weight:
+      type: number
+      nullable: true
+    enabled:
+      type: boolean
+      default: true
+      nullable: true
+    use_for_batch_api:
+      type: boolean
+      default: false
+      nullable: true
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+    config_hash:
+      type: string
+      nullable: true
+    # Azure config fields
+    azure_endpoint:
+      $ref: '../../schemas/management/common.yaml#/EnvVar'
+      nullable: true
+    azure_api_version:
+      $ref: '../../schemas/management/common.yaml#/EnvVar'
+      nullable: true
+    azure_client_id:
+      $ref: '../../schemas/management/common.yaml#/EnvVar'
+      nullable: true
+    azure_client_secret:
+      $ref: '../../schemas/management/common.yaml#/EnvVar'
+      nullable: true
+    azure_tenant_id:
+      $ref: '../../schemas/management/common.yaml#/EnvVar'
+      nullable: true
+    # Vertex config fields
+    vertex_project_id:
+      $ref: '../../schemas/management/common.yaml#/EnvVar'
+      nullable: true
+    vertex_project_number:
+      $ref: '../../schemas/management/common.yaml#/EnvVar'
+      nullable: true
+    vertex_region:
+      $ref: '../../schemas/management/common.yaml#/EnvVar'
+      nullable: true
+    vertex_auth_credentials:
+      $ref: '../../schemas/management/common.yaml#/EnvVar'
+      nullable: true
+    # Bedrock config fields
+    bedrock_access_key:
+      $ref: '../../schemas/management/common.yaml#/EnvVar'
+      nullable: true
+    bedrock_secret_key:
+      $ref: '../../schemas/management/common.yaml#/EnvVar'
+      nullable: true
+    bedrock_session_token:
+      $ref: '../../schemas/management/common.yaml#/EnvVar'
+      nullable: true
+    bedrock_region:
+      $ref: '../../schemas/management/common.yaml#/EnvVar'
+      nullable: true
+    bedrock_arn:
+      $ref: '../../schemas/management/common.yaml#/EnvVar'
+      nullable: true
+
+# Routing Rules schemas
+
+RoutingRule:
+  type: object
+  description: CEL-based routing rule for intelligent request routing
+  properties:
+    id:
+      type: string
+      description: Unique identifier for the routing rule
+    name:
+      type: string
+      description: Name of the routing rule
+    description:
+      type: string
+      description: Description of what the rule does
+    enabled:
+      type: boolean
+      description: Whether the rule is enabled and active
+    cel_expression:
+      type: string
+      description: CEL (Common Expression Language) expression for matching
+    provider:
+      type: string
+      description: Target provider (empty string uses incoming request provider)
+      nullable: true
+    model:
+      type: string
+      description: Target model (empty string uses incoming request model)
+      nullable: true
+    fallbacks:
+      type: array
+      items:
+        type: string
+      description: Fallback providers in format "provider/model"
+    scope:
+      type: string
+      enum: [global, team, customer, virtual_key]
+      description: Scope level for the rule
+    scope_id:
+      type: string
+      description: ID for the scope (empty for global scope)
+      nullable: true
+    priority:
+      type: integer
+      description: Priority for rule evaluation (lower number = higher priority)
+    query:
+      type: object
+      description: Visual rule tree structure from query builder
+      nullable: true
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+  oneOf:
+    - type: object
+      properties:
+        scope:
+          type: string
+          enum: [global]
+      required:
+        - scope
+      description: Global scope routing rule
+    - type: object
+      properties:
+        scope:
+          type: string
+          enum: [team, customer, virtual_key]
+        scope_id:
+          type: string
+      required:
+        - scope
+        - scope_id
+      description: Scoped routing rule (requires scope_id)
+
+CreateRoutingRuleRequest:
+  type: object
+  description: Request to create a routing rule
+  required:
+    - name
+    - cel_expression
+    - scope
+    - priority
+  properties:
+    name:
+      type: string
+      description: Name of the routing rule
+    description:
+      type: string
+      description: Optional description
+    enabled:
+      type: boolean
+      description: Whether the rule is enabled
+    cel_expression:
+      type: string
+      description: CEL expression for matching
+    provider:
+      type: string
+      description: Target provider (optional, empty uses incoming)
+      nullable: true
+    model:
+      type: string
+      description: Target model (optional, empty uses incoming)
+      nullable: true
+    fallbacks:
+      type: array
+      items:
+        type: string
+      description: Fallback providers in format "provider/model"
+    scope:
+      type: string
+      enum: [global, team, customer, virtual_key]
+      description: Scope level for the rule
+    scope_id:
+      type: string
+      description: ID for the scope (required if scope is not global)
+      nullable: true
+    priority:
+      type: integer
+      description: Priority for rule evaluation (lower number = higher priority)
+    query:
+      type: object
+      description: Visual rule tree structure
+      nullable: true
+  oneOf:
+    - type: object
+      properties:
+        scope:
+          type: string
+          enum: [global]
+      required:
+        - scope
+      description: Global scope routing rule
+    - type: object
+      properties:
+        scope:
+          type: string
+          enum: [team, customer, virtual_key]
+        scope_id:
+          type: string
+      required:
+        - scope
+        - scope_id
+      description: Scoped routing rule (requires scope_id)
+
+UpdateRoutingRuleRequest:
+  type: object
+  description: Request to update a routing rule
+  properties:
+    name:
+      type: string
+    description:
+      type: string
+    enabled:
+      type: boolean
+    cel_expression:
+      type: string
+    provider:
+      type: string
+      nullable: true
+    model:
+      type: string
+      nullable: true
+    fallbacks:
+      type: array
+      items:
+        type: string
+    priority:
+      type: integer
+    query:
+      type: object
+      nullable: true
+
+RoutingRuleResponse:
+  type: object
+  description: Response containing created/updated routing rule
+  properties:
+    message:
+      type: string
+    rule:
+      $ref: '#/RoutingRule'
+
+ListRoutingRulesResponse:
+  type: object
+  description: Response containing list of routing rules
+  properties:
+    rules:
+      type: array
+      items:
+        $ref: '#/RoutingRule'
+    count:
+      type: integer
+      description: Number of routing rules returned

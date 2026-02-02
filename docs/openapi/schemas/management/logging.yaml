@@ -1,0 +1,433 @@
+# Logging API schemas
+
+LogEntry:
+  type: object
+  description: Log entry
+  properties:
+    id:
+      type: string
+    parent_request_id:
+      type: string
+    provider:
+      type: string
+    model:
+      type: string
+    status:
+      type: string
+      enum: ["processing", "success", "error"]
+    object:
+      type: string
+    timestamp:
+      type: string
+      format: date-time
+    number_of_retries:
+      type: integer
+    fallback_index:
+      type: integer
+    latency:
+      type: number
+    cost:
+      type: number
+    selected_key_id:
+      type: string
+    selected_key_name:
+      type: string
+    virtual_key_id:
+      type: string
+    virtual_key_name:
+      type: string
+      nullable: true
+    stream:
+      type: boolean
+    raw_request:
+      type: string
+    raw_response:
+      type: string
+    created_at:
+      type: string
+      format: date-time
+    token_usage:
+      $ref: '../../schemas/inference/usage.yaml#/BifrostLLMUsage'
+    error_details:
+      $ref: '../../schemas/inference/common.yaml#/BifrostError'
+    input_history:
+      type: array
+      items:
+        $ref: '../../schemas/inference/chat.yaml#/ChatMessage'
+    responses_input_history:
+      type: array
+      items:
+        $ref: '../../schemas/inference/responses.yaml#/ResponsesMessage'
+    output_message:
+      $ref: '../../schemas/inference/chat.yaml#/ChatMessage'
+    responses_output:
+      type: array
+      items:
+        $ref: '../../schemas/inference/responses.yaml#/ResponsesMessage'
+    embedding_output:
+      type: array
+      items:
+        type: array
+        items:
+          type: number
+    params:
+      type: object
+      additionalProperties: true
+    tools:
+      type: array
+      items:
+        $ref: '../../schemas/inference/chat.yaml#/ChatTool'
+    tool_calls:
+      type: array
+      items:
+        $ref: '../../schemas/inference/chat.yaml#/ChatAssistantMessageToolCall'
+    speech_input:
+      type: object
+      additionalProperties: true
+    transcription_input:
+      type: object
+      additionalProperties: true
+    image_generation_input:
+      type: object
+      additionalProperties: true
+    speech_output:
+      type: object
+      additionalProperties: true
+    transcription_output:
+      type: object
+      additionalProperties: true
+    image_generation_output:
+      type: object
+      additionalProperties: true
+    cache_debug:
+      type: object
+      additionalProperties: true
+    selected_key:
+      type: object
+      additionalProperties: true
+    virtual_key:
+      type: object
+      additionalProperties: true
+
+MCPToolLogEntry:
+  type: object
+  description: MCP tool execution log entry
+  properties:
+    id:
+      type: string
+      description: Unique identifier for the log entry
+    llm_request_id:
+      type: string
+      description: Links to the LLM request that triggered this tool call
+    timestamp:
+      type: string
+      format: date-time
+      description: When the tool execution started
+    tool_name:
+      type: string
+      description: Name of the MCP tool that was executed
+    server_label:
+      type: string
+      description: Label of the MCP server that provided the tool
+    virtual_key_id:
+      type: string
+      description: ID of the virtual key used for this tool execution
+    virtual_key_name:
+      type: string
+      description: Name of the virtual key used for this tool execution
+    arguments:
+      type: object
+      additionalProperties: true
+      description: Tool execution arguments
+    result:
+      type: object
+      additionalProperties: true
+      description: Tool execution result
+    error_details:
+      $ref: '../../schemas/inference/common.yaml#/BifrostError'
+    latency:
+      type: number
+      description: Execution time in milliseconds
+    cost:
+      type: number
+      description: Cost in dollars for this tool execution
+    status:
+      type: string
+      enum: ["processing", "success", "error"]
+      description: Execution status
+    created_at:
+      type: string
+      format: date-time
+      description: When the log entry was created
+
+MCPToolLogSearchFilters:
+  type: object
+  description: MCP tool log search filters
+  properties:
+    tool_names:
+      type: array
+      items:
+        type: string
+      description: Filter by tool names
+    server_labels:
+      type: array
+      items:
+        type: string
+      description: Filter by server labels
+    status:
+      type: array
+      items:
+        type: string
+      description: Filter by execution status
+    llm_request_ids:
+      type: array
+      items:
+        type: string
+      description: Filter by linked LLM request IDs
+    start_time:
+      type: string
+      format: date-time
+      description: Filter by start time (RFC3339 format)
+    end_time:
+      type: string
+      format: date-time
+      description: Filter by end time (RFC3339 format)
+    min_latency:
+      type: number
+      description: Filter by minimum latency
+    max_latency:
+      type: number
+      description: Filter by maximum latency
+    content_search:
+      type: string
+      description: Search in tool arguments and results
+
+MCPToolLogStats:
+  type: object
+  description: MCP tool log statistics
+  properties:
+    total_executions:
+      type: integer
+      description: Total number of tool executions
+    success_rate:
+      type: number
+      description: Success rate percentage
+    average_latency:
+      type: number
+      description: Average execution latency in milliseconds
+    total_cost:
+      type: number
+      description: Total cost in dollars for all executions
+
+SearchMCPLogsResponse:
+  type: object
+  description: Search MCP logs response
+  properties:
+    logs:
+      type: array
+      items:
+        $ref: '#/MCPToolLogEntry'
+    pagination:
+      type: object
+      required:
+        - total_count
+      properties:
+        limit:
+          type: integer
+        offset:
+          type: integer
+        sort_by:
+          type: string
+        order:
+          type: string
+        total_count:
+          type: integer
+          format: int64
+          description: Total number of items matching the query
+    stats:
+      $ref: '#/MCPToolLogStats'
+    has_logs:
+      type: boolean
+      description: Whether any logs exist in the system
+
+MCPLogsFilterDataResponse:
+  type: object
+  description: Available MCP log filter data
+  properties:
+    tool_names:
+      type: array
+      items:
+        type: string
+      description: All unique tool names
+    server_labels:
+      type: array
+      items:
+        type: string
+      description: All unique server labels
+    virtual_keys:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: string
+            description: Virtual key ID
+          name:
+            type: string
+            description: Virtual key name
+          value:
+            type: string
+            description: Virtual key value (redacted if applicable)
+      description: All unique virtual keys
+
+DeleteMCPLogsRequest:
+  type: object
+  description: Delete MCP logs request
+  required:
+    - ids
+  properties:
+    ids:
+      type: array
+      items:
+        type: string
+      description: Array of log IDs to delete
+
+SearchFilters:
+  type: object
+  description: Log search filters
+  properties:
+    providers:
+      type: array
+      items:
+        type: string
+    models:
+      type: array
+      items:
+        type: string
+    status:
+      type: array
+      items:
+        type: string
+    objects:
+      type: array
+      items:
+        type: string
+    selected_key_ids:
+      type: array
+      items:
+        type: string
+    virtual_key_ids:
+      type: array
+      items:
+        type: string
+    start_time:
+      type: string
+      format: date-time
+    end_time:
+      type: string
+      format: date-time
+    min_latency:
+      type: number
+    max_latency:
+      type: number
+    min_tokens:
+      type: integer
+    max_tokens:
+      type: integer
+    min_cost:
+      type: number
+    max_cost:
+      type: number
+    missing_cost_only:
+      type: boolean
+    content_search:
+      type: string
+
+SearchLogsResponse:
+  type: object
+  description: Search logs response
+  properties:
+    logs:
+      type: array
+      items:
+        $ref: '#/LogEntry'
+    total:
+      type: integer
+    offset:
+      type: integer
+    limit:
+      type: integer
+
+LogStats:
+  type: object
+  description: Log statistics
+  properties:
+    total_requests:
+      type: integer
+    total_tokens:
+      type: integer
+    total_cost:
+      type: number
+    average_latency:
+      type: number
+    success_rate:
+      type: number
+
+DroppedRequestsResponse:
+  type: object
+  description: Dropped requests response
+  properties:
+    dropped_requests:
+      type: integer
+      format: int64
+
+FilterDataResponse:
+  type: object
+  description: Available filter data response
+  properties:
+    models:
+      type: array
+      items:
+        type: string
+    selected_keys:
+      type: array
+      items:
+        $ref: '../../schemas/management/providers.yaml#/Key'
+    virtual_keys:
+      type: array
+      items:
+        $ref: '../../schemas/management/governance.yaml#/VirtualKey'
+
+DeleteLogsRequest:
+  type: object
+  description: Delete logs request
+  required:
+    - ids
+  properties:
+    ids:
+      type: array
+      items:
+        type: string
+
+RecalculateCostRequest:
+  type: object
+  description: Recalculate cost request
+  properties:
+    filters:
+      $ref: '#/SearchFilters'
+    limit:
+      type: integer
+      description: Maximum number of logs to process (default 200, max 1000)
+
+RecalculateCostResponse:
+  type: object
+  description: Recalculate cost response
+  properties:
+    total_matched:
+      type: integer
+    updated:
+      type: integer
+    skipped:
+      type: integer
+    remaining:
+      type: integer

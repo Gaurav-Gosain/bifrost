@@ -1,0 +1,637 @@
+---
+title: "Connecting to MCP Servers"
+sidebarTitle: "Connecting to Servers"
+description: "Connect Bifrost to external MCP servers via STDIO, HTTP, or SSE protocols."
+icon: "plug"
+---
+
+## Overview
+
+Bifrost can connect to any MCP-compatible server to discover and execute tools. Each connection is called an **MCP Client** in Bifrost terminology.
+
+## Connection Types
+
+Bifrost supports three connection protocols, each with different authentication options:
+
+| Type | Description | Best For | Auth Support |
+|------|-------------|----------|--------------|
+| **STDIO** | Spawns a subprocess and communicates via stdin/stdout | Local tools, CLI utilities, scripts | None |
+| **HTTP** | Sends requests to an HTTP endpoint | Remote APIs, microservices, cloud functions | Headers, OAuth 2.0 |
+| **SSE** | Server-Sent Events for persistent connections | Real-time data, streaming tools | Headers, OAuth 2.0 |
+
+### STDIO Connections
+
+STDIO connections launch external processes and communicate via standard input/output. Best for local tools and scripts.
+
+```json
+{
+  "name": "filesystem",
+  "connection_type": "stdio",
+  "stdio_config": {
+    "command": "npx",
+    "args": ["-y", "@anthropic/mcp-filesystem"],
+    "envs": ["HOME", "PATH"]
+  },
+  "tools_to_execute": ["*"]
+}
+```
+
+**Use Cases:**
+- Local filesystem operations
+- Python/Node.js MCP servers
+- CLI utilities and scripts
+- Database tools with local credentials
+
+<Warning>
+**Docker Users:** When running Bifrost in Docker, STDIO connections may not work if the required commands (e.g., `npx`, `python`) are not installed in the container. For STDIO-based MCP servers, build a custom Docker image that includes the necessary dependencies, or use HTTP/SSE connections to externally hosted MCP servers.
+</Warning>
+
+### HTTP Connections
+
+HTTP connections communicate with MCP servers via HTTP requests. Ideal for remote services and microservices.
+
+HTTP connections support two authentication methods:
+- **Header-based authentication**: Static headers (API keys, custom tokens)
+- **OAuth 2.0**: Dynamic token-based authentication with automatic token refresh
+
+#### Header-Based Authentication
+
+Use static headers for API keys and custom authentication tokens:
+
+```json
+{
+  "name": "web-search",
+  "connection_type": "http",
+  "connection_string": "https://mcp-server.example.com/mcp",
+  "auth_type": "headers",
+  "headers": {
+    "Authorization": "Bearer your-api-key",
+    "X-Custom-Header": "value"
+  },
+  "tools_to_execute": ["*"]
+}
+```
+
+**Use Cases:**
+- Static API keys
+- Bearer token authentication
+- Custom header-based auth schemes
+
+#### OAuth 2.0 Authentication
+
+Use OAuth 2.0 for secure, user-based authentication with automatic token refresh:
+
+```json
+{
+  "name": "web-search",
+  "connection_type": "http",
+  "connection_string": "https://mcp-server.example.com/mcp",
+  "auth_type": "oauth",
+  "oauth_config": {
+    "client_id": "your-client-id",
+    "client_secret": "your-client-secret",
+    "authorize_url": "https://auth.example.com/authorize",
+    "token_url": "https://auth.example.com/token",
+    "scopes": ["read", "write"]
+  },
+  "tools_to_execute": ["*"]
+}
+```
+
+**Features:**
+- Automatic token refresh before expiration
+- PKCE support for public clients
+- Dynamic client registration (RFC 7591)
+- OAuth discovery from server URLs
+
+[→ Learn more about OAuth authentication →](./oauth)
+
+**Use Cases:**
+- User-delegated access
+- Third-party service integrations
+- Secure credential management
+- Compliance with OAuth 2.0 standards
+
+**Overall HTTP Use Cases:**
+- Remote API integrations
+- Cloud-hosted MCP services
+- Microservice architectures
+- Third-party tool providers
+
+### SSE Connections
+
+Server-Sent Events (SSE) connections provide real-time, persistent connections to MCP servers. Like HTTP connections, SSE supports both header-based and OAuth authentication.
+
+#### Header-Based Authentication
+
+```json
+{
+  "name": "live-data",
+  "connection_type": "sse",
+  "connection_string": "https://stream.example.com/mcp/sse",
+  "auth_type": "headers",
+  "headers": {
+    "Authorization": "Bearer your-api-key"
+  },
+  "tools_to_execute": ["*"]
+}
+```
+
+#### OAuth 2.0 Authentication
+
+```json
+{
+  "name": "live-data",
+  "connection_type": "sse",
+  "connection_string": "https://stream.example.com/mcp/sse",
+  "auth_type": "oauth",
+  "oauth_config": {
+    "client_id": "your-client-id",
+    "authorize_url": "https://auth.example.com/authorize",
+    "token_url": "https://auth.example.com/token",
+    "scopes": ["stream:read"]
+  },
+  "tools_to_execute": ["*"]
+}
+```
+
+**Use Cases:**
+- Real-time market data
+- Live system monitoring
+- Event-driven workflows
+- User-authenticated streaming connections
+
+[→ Learn more about OAuth authentication →](./oauth)
+
+---
+
+## Gateway Setup
+
+<Tabs>
+<Tab title="Web UI">
+
+### Adding an MCP Client
+
+1. Navigate to **MCP Gateway** in the sidebar - you'll see a table of all registered servers
+
+<Frame>
+  <img src="/media/ui-mcp-servers-table.png" alt="MCP Servers Table" />
+</Frame>
+
+2. Click **New MCP Server** button to open the creation form
+
+3. Fill in the connection details:
+
+<Frame>
+  <img src="/media/ui-mcp-new-server.png" alt="Add MCP Client Form" />
+</Frame>
+
+**Fields:**
+- **Name**: Unique identifier (no spaces or hyphens, ASCII only)
+- **Connection Type**: STDIO, HTTP, or SSE
+- **For STDIO**: Command, arguments, and environment variables
+- **For HTTP/SSE**: Connection URL
+
+4. Click **Create** to connect
+
+### Viewing and Managing Connected Tools
+
+Once connected, click on any client row to open the configuration sheet:
+
+<Frame>
+  <img src="/media/ui-mcp-tool-config.png" alt="MCP Client Configuration and Tools" />
+</Frame>
+
+Here you can:
+- View all discovered tools with their descriptions and parameters
+- Enable/disable individual tools via toggle switches
+- Configure auto-execution for specific tools
+- Edit custom headers for HTTP/SSE connections
+- View the full connection configuration as JSON
+
+</Tab>
+<Tab title="API">
+
+### Add STDIO Client
+
+```bash
+curl -X POST http://localhost:8080/api/mcp/client \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "filesystem",
+    "connection_type": "stdio",
+    "stdio_config": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-filesystem"],
+      "envs": ["HOME", "PATH"]
+    },
+    "tools_to_execute": ["*"]
+  }'
+```
+
+### Add HTTP Client
+
+```bash
+curl -X POST http://localhost:8080/api/mcp/client \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "web_search",
+    "connection_type": "http",
+    "connection_string": "http://localhost:3001/mcp",
+    "tools_to_execute": ["*"]
+  }'
+```
+
+### Add SSE Client
+
+```bash
+curl -X POST http://localhost:8080/api/mcp/client \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "realtime_data",
+    "connection_type": "sse",
+    "connection_string": "https://api.example.com/mcp/sse",
+    "tools_to_execute": ["*"]
+  }'
+```
+
+### List All Clients
+
+```bash
+curl http://localhost:8080/api/mcp/clients
+```
+
+Response:
+```json
+[
+  {
+    "config": {
+      "id": "abc123",
+      "name": "filesystem",
+      "connection_type": "stdio",
+      "stdio_config": {
+        "command": "npx",
+        "args": ["-y", "@anthropic/mcp-filesystem"]
+      }
+    },
+    "tools": [
+      {"name": "read_file", "description": "Read contents of a file"},
+      {"name": "write_file", "description": "Write contents to a file"},
+      {"name": "list_directory", "description": "List directory contents"}
+    ],
+    "state": "connected"
+  }
+]
+```
+
+</Tab>
+<Tab title="config.json">
+
+Configure MCP clients in your `config.json`:
+
+```json
+{
+  "mcp": {
+    "client_configs": [
+      {
+        "name": "filesystem",
+        "connection_type": "stdio",
+        "is_ping_available": true,
+        "stdio_config": {
+          "command": "npx",
+          "args": ["-y", "@anthropic/mcp-filesystem"],
+          "envs": ["HOME", "PATH"]
+        },
+        "tools_to_execute": ["*"]
+      },
+      {
+        "name": "web_search",
+        "connection_type": "http",
+        "connection_string": "env.WEB_SEARCH_MCP_URL",
+        "is_ping_available": false,
+        "tools_to_execute": ["search", "fetch_url"]
+      },
+      {
+        "name": "database",
+        "connection_type": "sse",
+        "connection_string": "https://db-mcp.example.com/sse",
+        "is_ping_available": true,
+        "tools_to_execute": []
+      }
+    ]
+  }
+}
+```
+
+<Note>
+Use `env.VARIABLE_NAME` syntax to reference environment variables for sensitive values like URLs with API keys.
+</Note>
+
+</Tab>
+</Tabs>
+
+---
+
+## Go SDK Setup
+
+Configure MCP in your Bifrost initialization:
+
+```go
+package main
+
+import (
+    "context"
+    bifrost "github.com/maximhq/bifrost/core"
+    "github.com/maximhq/bifrost/core/schemas"
+)
+
+func main() {
+    mcpConfig := &schemas.MCPConfig{
+        ClientConfigs: []schemas.MCPClientConfig{
+            {
+                Name:             "filesystem",
+                ConnectionType:   schemas.MCPConnectionTypeSTDIO,
+                IsPingAvailable:  true,  // Use lightweight ping for health checks
+                StdioConfig: &schemas.MCPStdioConfig{
+                    Command: "npx",
+                    Args:    []string{"-y", "@anthropic/mcp-filesystem"},
+                    Envs:    []string{"HOME", "PATH"},
+                },
+                ToolsToExecute: []string{"*"},
+            },
+            {
+                Name:             "web_search",
+                ConnectionType:   schemas.MCPConnectionTypeHTTP,
+                ConnectionString: bifrost.Ptr("http://localhost:3001/mcp"),
+                IsPingAvailable:  false,  // Use listTools for health checks
+                ToolsToExecute:   []string{"search", "fetch_url"},
+            },
+        },
+    }
+
+    client, err := bifrost.Init(context.Background(), schemas.BifrostConfig{
+        Account:   account,
+        MCPConfig: mcpConfig,
+        Logger:    bifrost.NewDefaultLogger(schemas.LogLevelInfo),
+    })
+    if err != nil {
+        panic(err)
+    }
+}
+```
+
+### Tools To Execute Semantics
+
+The `ToolsToExecute` field controls which tools from the client are available:
+
+| Value | Behavior |
+|-------|----------|
+| `["*"]` | All tools from this client are included |
+| `[]` or `nil` | No tools included (deny-by-default) |
+| `["tool1", "tool2"]` | Only specified tools are included |
+
+### Tools To Auto Execute (Agent Mode)
+
+The `ToolsToAutoExecute` field controls which tools can be automatically executed in [Agent Mode](./agent-mode):
+
+| Value | Behavior |
+|-------|----------|
+| `["*"]` | All tools are auto-executed |
+| `[]` or `nil` | No tools are auto-executed (manual approval required) |
+| `["tool1", "tool2"]` | Only specified tools are auto-executed |
+
+<Note>
+A tool must be in **both** `ToolsToExecute` and `ToolsToAutoExecute` to be auto-executed. If a tool is in `ToolsToAutoExecute` but not in `ToolsToExecute`, it will be skipped.
+</Note>
+
+**Example configuration:**
+
+```go
+{
+    Name:           "filesystem",
+    ConnectionType: schemas.MCPConnectionTypeSTDIO,
+    StdioConfig: &schemas.MCPStdioConfig{
+        Command: "npx",
+        Args:    []string{"-y", "@anthropic/mcp-filesystem"},
+    },
+    ToolsToExecute:     []string{"*"},                              // All tools available
+    ToolsToAutoExecute: []string{"read_file", "list_directory"},    // Only these auto-execute
+}
+```
+
+---
+
+## Environment Variables
+
+Use environment variables for sensitive configuration values:
+
+**Gateway (config.json):**
+```json
+{
+  "name": "secure_api",
+  "connection_type": "http",
+  "connection_string": "env.SECURE_MCP_URL"
+}
+```
+
+**Go SDK:**
+```go
+{
+    Name:             "secure_api",
+    ConnectionType:   schemas.MCPConnectionTypeHTTP,
+    ConnectionString: bifrost.Ptr(os.Getenv("SECURE_MCP_URL")),
+}
+```
+
+Environment variables are:
+- Automatically resolved during client connection
+- Redacted in API responses and UI for security
+- Validated at startup to ensure all required variables are set
+
+---
+
+## Client State Management
+
+### Connection States
+
+| State | Description |
+|-------|-------------|
+| `connected` | Client is active and tools are available |
+| `connecting` | Client is establishing connection |
+| `disconnected` | Client lost connection but can be reconnected |
+| `error` | Client configuration or connection failed |
+
+### Managing Clients at Runtime
+
+<Tabs>
+<Tab title="Gateway API">
+
+**Reconnect a client:**
+```bash
+curl -X POST http://localhost:8080/api/mcp/client/{id}/reconnect
+```
+
+**Edit client configuration:**
+```bash
+curl -X PUT http://localhost:8080/api/mcp/client/{id} \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "filesystem",
+    "connection_type": "stdio",
+    "stdio_config": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-filesystem"]
+    },
+    "tools_to_execute": ["read_file", "list_directory"]
+  }'
+```
+
+**Remove a client:**
+```bash
+curl -X DELETE http://localhost:8080/api/mcp/client/{id}
+```
+
+</Tab>
+<Tab title="Go SDK">
+
+```go
+// Get all connected clients
+clients, err := client.GetMCPClients()
+for _, mcpClient := range clients {
+    fmt.Printf("Client: %s, State: %s, Tools: %d\n",
+        mcpClient.Config.Name,
+        mcpClient.State,
+        len(mcpClient.Tools))
+}
+
+// Reconnect a disconnected client
+err = client.ReconnectMCPClient("filesystem")
+
+// Add new client at runtime
+err = client.AddMCPClient(schemas.MCPClientConfig{
+    Name:           "new_client",
+    ConnectionType: schemas.MCPConnectionTypeHTTP,
+    ConnectionString: bifrost.Ptr("http://localhost:3002/mcp"),
+    ToolsToExecute: []string{"*"},
+})
+
+// Remove a client
+err = client.RemoveMCPClient("old_client")
+
+// Edit client tools
+err = client.EditMCPClientTools("filesystem", []string{"read_file", "list_directory"})
+```
+
+</Tab>
+</Tabs>
+
+---
+
+## Health Monitoring
+
+Bifrost automatically monitors MCP client health with periodic checks every 10 seconds by default.
+
+### Health Check Methods
+
+By default, Bifrost uses the lightweight **ping method** for health checks. However, you can configure the health check method based on your MCP server's capabilities:
+
+| Method | When to Use | Overhead | Fallback |
+|--------|------------|----------|----------|
+| **Ping** (default) | Server supports MCP ping protocol | Minimal | Best for most servers |
+| **ListTools** | Server doesn't support ping, or you need heavier checks | Higher | More resource-intensive |
+
+### Configuring Health Check Method
+
+You can toggle the `is_ping_available` setting for each client:
+
+#### Via Web UI
+
+1. Navigate to **MCP Gateway** and select a server
+2. In the configuration panel, toggle **"Ping Available for Health Check"**
+3. Enable: Uses lightweight ping for health checks
+4. Disable: Uses listTools method for health checks instead
+
+<Frame>
+  <img src="/media/ui-mcp-ping-available.png" alt="Ping Available Toggle" />
+</Frame>
+
+#### Via API
+
+```bash
+curl -X PUT http://localhost:8080/api/mcp/client/{id} \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "my_server",
+    "is_ping_available": false
+  }'
+```
+
+#### Via config.json
+
+```json
+{
+  "mcp": {
+    "client_configs": [
+      {
+        "name": "filesystem",
+        "connection_type": "stdio",
+        "is_ping_available": true,
+        "stdio_config": {
+          "command": "npx",
+          "args": ["-y", "@anthropic/mcp-filesystem"]
+        }
+      }
+    ]
+  }
+}
+```
+
+#### Via Go SDK
+
+```go
+err := client.EditMCPClient(context.Background(), schemas.MCPClientConfig{
+    ID:               "filesystem",
+    Name:             "filesystem",
+    IsPingAvailable:  false,  // Use listTools instead of ping
+    ToolsToExecute:   []string{"*"},
+})
+```
+
+### Health Check Behavior
+
+When a client disconnects:
+1. State changes to `disconnected`
+2. Tools from that client become unavailable
+3. You can reconnect via API or UI
+
+**Note:** Changing `is_ping_available` takes effect immediately without requiring a client reconnection.
+
+---
+
+## Naming Conventions
+
+MCP client names have specific requirements:
+
+<Warning>
+- Must contain only ASCII characters
+- Cannot contain hyphens (`-`) or spaces
+- Cannot start with a number
+- Must be unique across all clients
+</Warning>
+
+**Valid names:** `filesystem`, `web_search`, `myAPI`, `tool123`
+
+**Invalid names:** `my-tools`, `web search`, `123tools`, `datos-api`
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Tool Execution" icon="play" href="./tool-execution">
+    Learn how to execute tools from connected MCP servers
+  </Card>
+  <Card title="Agent Mode" icon="robot" href="./agent-mode">
+    Enable autonomous tool execution with auto-approval
+  </Card>
+</CardGroup>

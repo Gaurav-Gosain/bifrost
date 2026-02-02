@@ -1,0 +1,35 @@
+# Image Generation Endpoints
+
+image-generation:
+  post:
+    operationId: imageGeneration
+    summary: Generate image
+    description: |
+      Generates images from text prompts using the specified model.
+    tags:
+      - Image Generations
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/inference/images.yaml#/ImageGenerationRequest'
+    responses:
+      '200':
+        description: |
+          Successful response. Returns JSON for non-streaming requests, or Server-Sent Events (SSE) stream when `stream=true`.
+          When streaming, events are sent with the following event types:
+          - `image_generation.partial_image`: Intermediate image chunks with base64-encoded image data
+          - `image_generation.completed`: Final event for each image with usage information
+          - `error`: Error events with error details
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/inference/images.yaml#/ImageGenerationResponse'
+          text/event-stream:
+            schema:
+              $ref: '../../schemas/inference/images.yaml#/ImageGenerationStreamResponse'
+      '400':
+        $ref: '../../openapi.yaml#/components/responses/BadRequest'
+      '500':
+        $ref: '../../openapi.yaml#/components/responses/InternalError'

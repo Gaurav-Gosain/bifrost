@@ -1,0 +1,5 @@
+- feat: added support for image editing and variations
+- fix: skip OpenAI parameter filtering for custom providers
+- fix: add finish reason to Gemini chat completion response
+- fix: ensure ExtraParams are propagated into provider request body
+- docs: add supported headers reference documentation
