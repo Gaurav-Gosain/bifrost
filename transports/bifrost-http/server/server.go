@@ -12,8 +12,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/fasthttp/router"
-	"github.com/google/uuid"
 	bifrost "github.com/Gaurav-Gosain/bifrost/core"
 	"github.com/Gaurav-Gosain/bifrost/core/schemas"
 	"github.com/Gaurav-Gosain/bifrost/framework/configstore"
@@ -27,6 +25,8 @@ import (
 	"github.com/Gaurav-Gosain/bifrost/plugins/telemetry"
 	"github.com/Gaurav-Gosain/bifrost/transports/bifrost-http/handlers"
 	"github.com/Gaurav-Gosain/bifrost/transports/bifrost-http/lib"
+	"github.com/fasthttp/router"
+	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/valyala/fasthttp"
 	"github.com/valyala/fasthttp/fasthttpadaptor"

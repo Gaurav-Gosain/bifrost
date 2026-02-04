@@ -1,7 +1,14 @@
 "use client";
 
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function WorkspacePage() {
-	redirect("/workspace/dashboard");
+	const router = useRouter();
+	
+	useEffect(() => {
+		router.replace("/workspace/dashboard");
+	}, [router]);
+	
+	return null;
 }

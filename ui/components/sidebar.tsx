@@ -2,37 +2,25 @@
 
 import {
 	ArrowUpRight,
-	BookUser,
-	Boxes,
 	BoxIcon,
 	BugIcon,
 	ChartColumnBig,
 	ChevronsLeftRightEllipsis,
 	CircleDollarSign,
 	Cog,
-	Construction,
-	FlaskConical,
 	FolderGit,
 	Gauge,
-	Globe,
 	KeyRound,
 	Landmark,
-	Layers,
-	LayoutGrid,
 	LogOut,
 	Logs,
 	PanelLeftClose,
 	Puzzle,
-	ScrollText,
 	Settings,
 	Settings2Icon,
 	Shield,
-	ShieldUser,
-	Shuffle,
 	Telescope,
-	ToolCase,
 	User,
-	UserRoundCheck,
 	Users,
 	Zap,
 } from "lucide-react";
@@ -55,8 +43,9 @@ import {
 } from "@/components/ui/sidebar";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { IS_ENTERPRISE, TRIAL_EXPIRY } from "@/lib/constants/config";
-import { useGetCoreConfigQuery, useGetLatestReleaseQuery, useGetVersionQuery, useLogoutMutation } from "@/lib/store";
+import { useGetCoreConfigQuery, useGetVersionQuery, useLogoutMutation } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { getAssetUrl } from "@/lib/utils/port";
 import { RbacOperation, RbacResource, useRbac } from "@enterprise/lib";
 import type { UserInfo } from "@enterprise/lib/store/utils/tokenManager";
 import { getUserInfo } from "@enterprise/lib/store/utils/tokenManager";
@@ -68,13 +57,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useCookies } from "react-cookie";
 import { ThemeToggle } from "./themeToggle";
 import { Badge } from "./ui/badge";
 import { PromoCardStack } from "./ui/promoCardStack";
-
-// Cookie name for dismissing production setup card
-const PRODUCTION_SETUP_DISMISSED_COOKIE = "bifrost_production_setup_dismissed";
 
 // Custom MCP Icon Component
 const MCPIcon = ({ className }: { className?: string }) => (
@@ -122,30 +107,6 @@ const externalLinks = [
 		strokeWidth: 1,
 	},
 ];
-
-// Base promotional card (memoized outside component to prevent recreation)
-const productionSetupHelpCard = {
-	id: "production-setup",
-	title: "Need help with production setup?",
-	description: (
-		<>
-			We offer help with production setup including custom integrations and dedicated support.
-			<br />
-			<br />
-			Book a demo with our team{" "}
-			<Link
-				href="https://calendly.com/maximai/bifrost-demo?utm_source=bfd_sdbr"
-				target="_blank"
-				className="text-primary font-medium underline"
-				rel="noopener noreferrer"
-			>
-				here
-			</Link>
-			.
-		</>
-	),
-	dismissible: true,
-};
 
 // Sidebar item interface
 interface SidebarItem {
@@ -293,46 +254,6 @@ const SidebarItemView = ({
 	);
 };
 
-// Helper function to compare semantic versions
-const compareVersions = (v1: string, v2: string): number => {
-	// Remove 'v' prefix if present
-	const cleanV1 = v1.startsWith("v") ? v1.slice(1) : v1;
-	const cleanV2 = v2.startsWith("v") ? v2.slice(1) : v2;
-
-	// Split into main version and prerelease
-	const [mainV1, prereleaseV1] = cleanV1.split("-");
-	const [mainV2, prereleaseV2] = cleanV2.split("-");
-
-	// Compare main version numbers (major.minor.patch)
-	const partsV1 = mainV1.split(".").map(Number);
-	const partsV2 = mainV2.split(".").map(Number);
-
-	for (let i = 0; i < Math.max(partsV1.length, partsV2.length); i++) {
-		const num1 = partsV1[i] || 0;
-		const num2 = partsV2[i] || 0;
-
-		if (num1 > num2) return 1;
-		if (num1 < num2) return -1;
-	}
-
-	// If main versions are equal, check prerelease
-	// Version without prerelease is higher than version with prerelease
-	if (!prereleaseV1 && prereleaseV2) return 1;
-	if (prereleaseV1 && !prereleaseV2) return -1;
-
-	// Both have prereleases, compare them
-	if (prereleaseV1 && prereleaseV2) {
-		// Extract prerelease number (e.g., "prerelease1" -> 1)
-		const prereleaseNum1 = parseInt(prereleaseV1.replace(/\D/g, "")) || 0;
-		const prereleaseNum2 = parseInt(prereleaseV2.replace(/\D/g, "")) || 0;
-
-		if (prereleaseNum1 > prereleaseNum2) return 1;
-		if (prereleaseNum1 < prereleaseNum2) return -1;
-	}
-
-	return 0;
-};
-
 export default function AppSidebar() {
 	const pathname = usePathname();
 	const router = useRouter();
@@ -340,28 +261,15 @@ export default function AppSidebar() {
 	const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 	const [areCardsEmpty, setAreCardsEmpty] = useState(false);
 	const [userPopoverOpen, setUserPopoverOpen] = useState(false);
-	const [cookies, setCookie] = useCookies([PRODUCTION_SETUP_DISMISSED_COOKIE]);
-	const isProductionSetupDismissed = !!cookies[PRODUCTION_SETUP_DISMISSED_COOKIE];
-	const { data: latestRelease } = useGetLatestReleaseQuery(undefined, {
-		skip: !mounted, // Only fetch after component is mounted
-	});
 	const hasLogsAccess = useRbac(RbacResource.Logs, RbacOperation.View);
 	const hasObservabilityAccess = useRbac(RbacResource.Observability, RbacOperation.View);
 	const hasModelProvidersAccess = useRbac(RbacResource.ModelProvider, RbacOperation.View);
 	const hasMCPGatewayAccess = useRbac(RbacResource.MCPGateway, RbacOperation.View);
 	const hasPluginsAccess = useRbac(RbacResource.Plugins, RbacOperation.View);
-	const hasUserProvisioningAccess = useRbac(RbacResource.UserProvisioning, RbacOperation.View);
-	const hasAuditLogsAccess = useRbac(RbacResource.AuditLogs, RbacOperation.View);
 	const hasCustomersAccess = useRbac(RbacResource.Customers, RbacOperation.View);
 	const hasTeamsAccess = useRbac(RbacResource.Teams, RbacOperation.View);
-	const hasRbacAccess = useRbac(RbacResource.RBAC, RbacOperation.View);
 	const hasVirtualKeysAccess = useRbac(RbacResource.VirtualKeys, RbacOperation.View);
 	const hasGovernanceAccess = useRbac(RbacResource.Governance, RbacOperation.View);
-	const hasRoutingRulesAccess = useRbac(RbacResource.RoutingRules, RbacOperation.View);
-	const hasGuardrailsProvidersAccess = useRbac(RbacResource.GuardrailsProviders, RbacOperation.View);
-	const hasGuardrailsConfigAccess = useRbac(RbacResource.GuardrailsConfig, RbacOperation.View);
-	const hasClusterConfigAccess = useRbac(RbacResource.Cluster, RbacOperation.View);
-	const isAdaptiveRoutingAllowed = useRbac(RbacResource.AdaptiveRouter, RbacOperation.View);
 	const hasSettingsAccess = useRbac(RbacResource.Settings, RbacOperation.View);
 
 	const items = [
@@ -414,7 +322,7 @@ export default function AppSidebar() {
 			url: "/workspace/providers",
 			icon: BoxIcon,
 			description: "Configure models",
-			hasAccess: hasModelProvidersAccess || hasRoutingRulesAccess || hasGovernanceAccess,
+			hasAccess: hasModelProvidersAccess || hasGovernanceAccess,
 			subItems: [
 				{
 					title: "Configurations",
@@ -443,31 +351,8 @@ export default function AppSidebar() {
 			title: "MCP Gateway",
 			icon: MCPIcon,
 			description: "MCP configuration",
-			url: "/workspace/mcp-gateway",
+			url: "/workspace/mcp-registry",
 			hasAccess: hasMCPGatewayAccess,
-			subItems: [
-				{
-					title: "MCP Catalog",
-					url: "/workspace/mcp-registry",
-					icon: LayoutGrid,
-					description: "MCP tool catalog",
-					hasAccess: hasMCPGatewayAccess,
-				},
-				{
-					title: "Tool groups",
-					url: "/workspace/mcp-tool-groups",
-					icon: ToolCase,
-					description: "MCP tool groups",
-					hasAccess: hasMCPGatewayAccess,
-				},
-				{
-					title: "Auth Config",
-					url: "/workspace/mcp-auth-config",
-					icon: ShieldUser,
-					description: "MCP auth config",
-					hasAccess: hasMCPGatewayAccess,
-				},
-			],
 		},
 		{
 			title: "Plugins",
@@ -486,10 +371,7 @@ export default function AppSidebar() {
 				hasGovernanceAccess ||
 				hasVirtualKeysAccess ||
 				hasCustomersAccess ||
-				hasTeamsAccess ||
-				hasUserProvisioningAccess ||
-				hasRbacAccess ||
-				hasAuditLogsAccess,
+				hasTeamsAccess,
 			subItems: [
 				{
 					title: "Virtual Keys",
@@ -505,74 +387,9 @@ export default function AppSidebar() {
 					description: "Manage users & groups",
 					hasAccess: hasCustomersAccess || hasTeamsAccess,
 				},
-				{
-					title: "User Provisioning",
-					url: "/workspace/scim",
-					icon: BookUser,
-					description: "User management and provisioning",
-					hasAccess: hasUserProvisioningAccess,
-				},
-				{
-					title: "Roles & Permissions",
-					url: "/workspace/rbac",
-					icon: UserRoundCheck,
-					description: "User roles and permissions",
-					hasAccess: hasRbacAccess,
-				},
-				{
-					title: "Audit Logs",
-					url: "/workspace/audit-logs",
-					icon: ScrollText,
-					description: "Audit logs and compliance",
-					hasAccess: hasAuditLogsAccess,
-				},
 			],
 		},
-		{
-			title: "Guardrails",
-			url: "/workspace/guardrails",
-			icon: Construction,
-			description: "Guardrails configuration",
-			hasAccess: hasGuardrailsConfigAccess || hasGuardrailsProvidersAccess,
-			subItems: [
-				{
-					title: "Configuration",
-					url: "/workspace/guardrails/configuration",
-					icon: Cog,
-					description: "Guardrail configuration",
-					hasAccess: hasGuardrailsConfigAccess,
-				},
-				{
-					title: "Providers",
-					url: "/workspace/guardrails/providers",
-					icon: Boxes,
-					description: "Guardrail providers configuration",
-					hasAccess: hasGuardrailsProvidersAccess,
-				},
-			],
-		},
-		{
-			title: "Evals",
-			url: "https://www.getmaxim.ai",
-			icon: FlaskConical,
-			isExternal: true,
-			description: "Evaluations",
-			hasAccess: true,
-		},
-		{
-			title: "Cluster Config",
-			url: "/workspace/cluster",
-			icon: Layers,
-			description: "Manage Bifrost cluster",
-			hasAccess: hasClusterConfigAccess,
-		},
-		{
-			title: "Adaptive Routing",
-			url: "/workspace/adaptive-routing",
-			icon: Shuffle,
-			description: "Manage adaptive load balancer",
-			hasAccess: isAdaptiveRoutingAllowed,
-		},
+
 		{
 			title: "Config",
 			url: "/workspace/config",
@@ -636,24 +453,6 @@ export default function AppSidebar() {
 					description: "Security settings",
 					hasAccess: hasSettingsAccess,
 				},
-				...(IS_ENTERPRISE
-					? [
-							{
-								title: "Proxy",
-								url: "/workspace/config/proxy",
-								icon: Globe,
-								description: "Proxy configuration",
-								hasAccess: hasSettingsAccess,
-							},
-						]
-					: []),
-				{
-					title: "API Keys",
-					url: "/workspace/config/api-keys",
-					icon: KeyRound,
-					description: "API keys management",
-					hasAccess: hasSettingsAccess,
-				},
 				{
 					title: "Performance Tuning",
 					url: "/workspace/config/performance-tuning",
@@ -678,13 +477,6 @@ export default function AppSidebar() {
 		}
 	}, []);
 
-	const showNewReleaseBanner = useMemo(() => {
-		if (IS_ENTERPRISE) return false;
-		if (latestRelease && version) {
-			return compareVersions(latestRelease.name, version) > 0;
-		}
-		return false;
-	}, [latestRelease, version]);
 	// Get governance config from RTK Query
 	const { data: coreConfig } = useGetCoreConfigQuery({});
 	const isGovernanceEnabled = coreConfig?.client_config.enable_governance || false;
@@ -726,13 +518,10 @@ export default function AppSidebar() {
 	};
 
 	// Always render the light theme version for SSR to avoid hydration mismatch
-	const logoSrc = mounted && resolvedTheme === "dark" ? "/bifrost-logo-dark.png" : "/bifrost-logo.png";
-	const iconSrc = mounted && resolvedTheme === "dark" ? "/bifrost-icon-dark.png" : "/bifrost-icon.png";
+	const logoSrc = getAssetUrl(mounted && resolvedTheme === "dark" ? "/bifrost-logo-dark.png" : "/bifrost-logo.png");
+	const iconSrc = getAssetUrl(mounted && resolvedTheme === "dark" ? "/bifrost-icon-dark.png" : "/bifrost-icon.png");
 
 	const { isConnected: isWebSocketConnected } = useWebSocket();
-
-	// New release image - based on theme
-	const newReleaseImage = mounted && resolvedTheme === "dark" ? "/images/new-release-image-dark.png" : "/images/new-release-image.png";
 
 	// Memoize promo cards array to prevent duplicates and unnecessary re-renders
 	const promoCards = useMemo(() => {
@@ -751,31 +540,8 @@ export default function AppSidebar() {
 				variant: "warning" as const,
 			});
 		}
-		if (showNewReleaseBanner && latestRelease) {
-			cards.push({
-				id: "new-release",
-				title: `${latestRelease.name} is now available.`,
-				description: (
-					<div className="flex h-full flex-col gap-2">
-						<img src={newReleaseImage} alt="Bifrost" className="h-[95px] rounded-md object-cover" />
-						<Link
-							href={`https://docs.getbifrost.ai/changelogs/${latestRelease.name}`}
-							target="_blank"
-							className="text-primary mt-auto pb-1 font-medium underline"
-						>
-							View release notes
-						</Link>
-					</div>
-				),
-				dismissible: true,
-			});
-		}
-		// Only show after mounted to ensure cookie is properly hydrated and avoid flash
-		if (!IS_ENTERPRISE && mounted && !isProductionSetupDismissed) {
-			cards.push(productionSetupHelpCard);
-		}
 		return cards;
-	}, [coreConfig?.restart_required, showNewReleaseBanner, latestRelease, newReleaseImage, isProductionSetupDismissed, mounted]);
+	}, [coreConfig?.restart_required]);
 
 	// Reset areCardsEmpty when promoCards changes
 	useEffect(() => {
@@ -792,20 +558,6 @@ export default function AppSidebar() {
 	const handleCardsEmpty = () => {
 		setAreCardsEmpty(true);
 	};
-
-	const handlePromoDismiss = useCallback(
-		(cardId: string) => {
-			if (cardId === "production-setup") {
-				const expiryDate = new Date();
-				expiryDate.setDate(expiryDate.getDate() + 7);
-				setCookie(PRODUCTION_SETUP_DISMISSED_COOKIE, "true", {
-					path: "/",
-					expires: expiryDate,
-				});
-			}
-		},
-		[setCookie],
-	);
 
 	const handleLogout = async () => {
 		try {
@@ -865,7 +617,7 @@ export default function AppSidebar() {
 										item={item}
 										isActive={isActive}
 										isAllowed={isAllowed}
-										isExternal={item.isExternal ?? false}
+										isExternal={false}
 										isWebSocketConnected={isWebSocketConnected}
 										isExpanded={expandedItems.has(item.title)}
 										onToggle={() => toggleItem(item.title)}
@@ -881,7 +633,7 @@ export default function AppSidebar() {
 				</SidebarGroup>
 				<div className="flex flex-col gap-4 px-3 group-data-[collapsible=icon]:px-1">
 					<div className="mx-1 group-data-[collapsible=icon]:hidden">
-						<PromoCardStack cards={promoCards} onCardsEmpty={handleCardsEmpty} onDismiss={handlePromoDismiss} />
+						<PromoCardStack cards={promoCards} onCardsEmpty={handleCardsEmpty} />
 					</div>
 					<div className="flex flex-row">
 						<div className="mx-auto flex flex-row gap-4 group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:gap-2">

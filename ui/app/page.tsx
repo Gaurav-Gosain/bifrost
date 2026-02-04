@@ -1,7 +1,14 @@
 "use client";
 
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function Index() {
-	redirect("login");
+	const router = useRouter();
+	
+	useEffect(() => {
+		router.replace("/login");
+	}, [router]);
+	
+	return null;
 }

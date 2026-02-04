@@ -75,8 +75,9 @@ export function getApiBaseUrl(): string {
 	if (config.isDevelopment) {
 		return `${config.baseUrl}/api`;
 	} else {
-		// Production mode: use relative URL for API calls
-		return "/api";
+		// Production mode: use relative URL for API calls with basePath prefix
+		const basePath = getBasePath();
+		return `${basePath}/api`;
 	}
 }
 
@@ -85,9 +86,19 @@ export function getApiBaseUrl(): string {
  */
 export function getWebSocketUrl(path: string = ""): string {
 	const config = getPortConfig();
+	const basePath = getBasePath();
 	const cleanPath = path.startsWith("/") ? path : `/${path}`;
 
-	return `${config.wsUrl}${cleanPath}`;
+	return `${config.wsUrl}${basePath}${cleanPath}`;
+}
+
+/**
+ * Get the URL for static assets (images, etc.) with basePath prefix
+ */
+export function getAssetUrl(path: string): string {
+	const basePath = getBasePath();
+	const cleanPath = path.startsWith("/") ? path : `/${path}`;
+	return `${basePath}${cleanPath}`;
 }
 
 /**
@@ -124,4 +135,20 @@ export function getEndpointUrl(endpoint: string): string {
 		// Production mode: use relative URLs
 		return cleanEndpoint;
 	}
+}
+
+export function getBasePath(): string {
+	if (process.env.NEXT_PUBLIC_BASE_PATH) {
+		return process.env.NEXT_PUBLIC_BASE_PATH;
+	}
+	if (typeof window !== "undefined" && (window as any).__NEXT_DATA__?.basePath) {
+		return (window as any).__NEXT_DATA__.basePath;
+	}
+	return "";
+}
+
+export function getNavigationUrl(path: string): string {
+	const basePath = getBasePath();
+	const cleanPath = path.startsWith("/") ? path : `/${path}`;
+	return `${basePath}${cleanPath}`;
 }

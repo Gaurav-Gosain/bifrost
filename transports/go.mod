@@ -151,3 +151,14 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/postgres v1.6.0 // indirect
 )
+
+replace github.com/Gaurav-Gosain/bifrost/core => ../core
+replace github.com/Gaurav-Gosain/bifrost/framework => ../framework
+replace github.com/Gaurav-Gosain/bifrost/plugins/governance => ../plugins/governance
+replace github.com/Gaurav-Gosain/bifrost/plugins/litellmcompat => ../plugins/litellmcompat
+replace github.com/Gaurav-Gosain/bifrost/plugins/logging => ../plugins/logging
+replace github.com/Gaurav-Gosain/bifrost/plugins/maxim => ../plugins/maxim
+replace github.com/Gaurav-Gosain/bifrost/plugins/otel => ../plugins/otel
+replace github.com/Gaurav-Gosain/bifrost/plugins/semanticcache => ../plugins/semanticcache
+replace github.com/Gaurav-Gosain/bifrost/plugins/telemetry => ../plugins/telemetry
+replace github.com/Gaurav-Gosain/bifrost/plugins/mocker => ../plugins/mocker

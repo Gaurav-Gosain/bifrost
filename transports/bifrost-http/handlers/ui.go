@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/fasthttp/router"
 	"github.com/Gaurav-Gosain/bifrost/core/schemas"
 	"github.com/Gaurav-Gosain/bifrost/transports/bifrost-http/lib"
+	"github.com/fasthttp/router"
 	"github.com/valyala/fasthttp"
 )
 
@@ -28,6 +28,11 @@ func NewUIHandler(uiContent embed.FS) *UIHandler {
 // RegisterRoutes registers the UI routes with the provided router.
 func (h *UIHandler) RegisterRoutes(router *router.Router, middlewares ...schemas.BifrostHTTPMiddleware) {
 	basePath := GetBasePath()
+
+	// Set custom handler for trailing slash to serve content properly with HTTPS awareness
+	router.RedirectTrailingSlash = false
+	router.RedirectFixedPath = false
+
 	if basePath == "" {
 		router.GET("/", lib.ChainMiddlewares(h.serveDashboard, middlewares...))
 		router.GET("/{filepath:*}", lib.ChainMiddlewares(h.serveDashboard, middlewares...))
@@ -35,6 +40,27 @@ func (h *UIHandler) RegisterRoutes(router *router.Router, middlewares ...schemas
 		// With base path, serve dashboard at /basepath and /basepath/*
 		router.GET(basePath, lib.ChainMiddlewares(h.serveDashboard, middlewares...))
 		router.GET(basePath+"/{filepath:*}", lib.ChainMiddlewares(h.serveDashboard, middlewares...))
+	}
+
+	// Set custom NotFound handler to handle trailing slash and other unmatched paths
+	existingNotFound := router.NotFound
+	router.NotFound = func(ctx *fasthttp.RequestCtx) {
+		requestPath := string(ctx.Path())
+		basePath := GetBasePath()
+
+		// Handle /basepath/ -> serve as /basepath
+		if basePath != "" && requestPath == basePath+"/" {
+			h.serveDashboard(ctx)
+			return
+		}
+
+		// Call existing NotFound handler if set
+		if existingNotFound != nil {
+			existingNotFound(ctx)
+		} else {
+			ctx.SetStatusCode(fasthttp.StatusNotFound)
+			ctx.SetBodyString("404 - Not Found")
+		}
 	}
 }
 
@@ -45,6 +71,15 @@ func (h *UIHandler) serveDashboard(ctx *fasthttp.RequestCtx) {
 
 	// Clean the path to prevent directory traversal
 	cleanPath := path.Clean(requestPath)
+
+	// Strip base path prefix if present
+	basePath := GetBasePath()
+	if basePath != "" && strings.HasPrefix(cleanPath, basePath) {
+		cleanPath = strings.TrimPrefix(cleanPath, basePath)
+		if cleanPath == "" {
+			cleanPath = "/"
+		}
+	}
 
 	// Handle .txt files (Next.js RSC payload files) - map from /{page}.txt to /{page}/index.txt
 	if strings.HasSuffix(cleanPath, ".txt") {

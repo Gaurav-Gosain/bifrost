@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getErrorMessage, setAuthToken, useIsAuthEnabledQuery, useLoginMutation } from "@/lib/store/apis";
+import { getAssetUrl } from "@/lib/utils/port";
 import { BooksIcon, DiscordLogoIcon, GithubLogoIcon } from "@phosphor-icons/react";
 import { useTheme } from "next-themes";
 import Image from "next/image";
@@ -89,7 +90,7 @@ export default function LoginView() {
 	};
 
 	// Use light logo for SSR to avoid hydration mismatch
-	const logoSrc = mounted && resolvedTheme === "dark" ? "/bifrost-logo-dark.png" : "/bifrost-logo.png";
+	const logoSrc = getAssetUrl(mounted && resolvedTheme === "dark" ? "/bifrost-logo-dark.png" : "/bifrost-logo.png");
 
 	// Show loading state while checking auth
 	if (isCheckingAuth || isLoadingIsAuthEnabled) {

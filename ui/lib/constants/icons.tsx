@@ -1,5 +1,6 @@
 "use client";
 
+import { getAssetUrl } from "@/lib/utils/port";
 import { useTheme } from "next-themes";
 
 type IconSize = "xs" | "sm" | "md" | "lg" | "xl" | number;
@@ -603,7 +604,7 @@ export const ProviderIcons = {
         );
     },
 	nebius: ({ size = "md", className = "" }: IconProps) => {
-		return <img src="/images/nebius.jpeg" alt="Nebius" className={className} />;
+		return <img src={getAssetUrl("/images/nebius.jpeg")} alt="Nebius" className={className} />;
 	},
 	xai: ({ size = "md", className = "" }: IconProps) => {
 		const resolvedSize = resolveSize(size);

@@ -4,6 +4,7 @@ import FullPageLoader from "@/components/fullPageLoader";
 import { Badge } from "@/components/ui/badge";
 import { setSelectedPlugin, useAppDispatch, useAppSelector, useGetPluginsQuery } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { getAssetUrl } from "@/lib/utils/port";
 import { useTheme } from "next-themes";
 import Image from "next/image";
 import { useQueryState } from "nuqs";
@@ -41,12 +42,12 @@ const supportedPlatformsList = (resolvedTheme: string): SupportedPlatform[] => [
 	{
 		id: "maxim",
 		name: "Maxim",
-		icon: <Image alt="Maxim" src={`/maxim-logo${resolvedTheme === "dark" ? "-dark" : ""}.png`} width={19} height={19} />,
+		icon: <Image alt="Maxim" src={getAssetUrl(`/maxim-logo${resolvedTheme === "dark" ? "-dark" : ""}.png`)} width={19} height={19} />,
 	},
 	{
 		id: "datadog",
 		name: "Datadog",
-		icon: <Image alt="Datadog" src="/images/datadog-logo.png" width={32} height={32} className="-ml-0.5" />,
+		icon: <Image alt="Datadog" src={getAssetUrl("/images/datadog-logo.png")} width={32} height={32} className="-ml-0.5" />,
 	},
 	{
 		id: "newrelic",

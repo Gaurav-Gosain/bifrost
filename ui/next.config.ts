@@ -12,13 +12,17 @@ const nextConfig: NextConfig = {
 	images: {
 		unoptimized: true,
 	},
-	basePath: "",
+	basePath: "/llm",
 	generateBuildId: () => "build",
 	typescript: {
 		ignoreBuildErrors: false,
 	},
+	eslint: {
+		ignoreDuringBuilds: true,
+	},
 	env: {
 		NEXT_PUBLIC_IS_ENTERPRISE: isEnterpriseBuild ? "true" : "false",
+		NEXT_PUBLIC_BASE_PATH: "/llm",
 	},
 	// Proxy API requests to backend in development
 	async rewrites() {

@@ -9,11 +9,11 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/google/uuid"
 	bifrost "github.com/Gaurav-Gosain/bifrost/core"
 	"github.com/Gaurav-Gosain/bifrost/core/schemas"
 	"github.com/Gaurav-Gosain/bifrost/framework/configstore/tables"
 	"github.com/Gaurav-Gosain/bifrost/framework/migrator"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -215,6 +215,17 @@ func migrationInit(ctx context.Context, db *gorm.DB) error {
 			}
 			if !migrator.HasTable(&tables.TableModel{}) {
 				if err := migrator.CreateTable(&tables.TableModel{}); err != nil {
+					return err
+				}
+			}
+			// OAuth tables must be created before MCP clients (FK reference)
+			if !migrator.HasTable(&tables.TableOauthToken{}) {
+				if err := migrator.CreateTable(&tables.TableOauthToken{}); err != nil {
+					return err
+				}
+			}
+			if !migrator.HasTable(&tables.TableOauthConfig{}) {
+				if err := migrator.CreateTable(&tables.TableOauthConfig{}); err != nil {
 					return err
 				}
 			}
